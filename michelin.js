@@ -10,103 +10,55 @@ var app     = express();
 
 
 app.get('/scrape', function(req, res){
-	// The URL we will scrape from - in our example Anchorman 2.
 
-	url = 'https://restaurant.michelin.fr/restaurants/france/restaurants-1-etoile-michelin/restaurants-2-etoiles-michelin/restaurants-3-etoiles-michelin';
-	url2 = 'https://restaurant.michelin.fr/restaurants/france/restaurants-1-etoile-michelin/restaurants-2-etoiles-michelin/restaurants-3-etoiles-michelin/page-'
-	var i=0; 
+ 	var json = {};
+ 	json['items']=[];
+
+	for(var i=0;i<36;i++){
+		url = 'https://restaurant.michelin.fr/restaurants/france/restaurants-1-etoile-michelin/restaurants-2-etoiles-michelin/restaurants-3-etoiles-michelin/page-'+i;
+		request(url, function(error, response, html){
+
+			// First we'll check to make sure no errors occurred when making the request
+
+			if(!error){
+				var $ = cheerio.load(html);
+
+				$('.poi-card-link').each(function(i,element){
+					var item = { 'title' : '', 'stars' : '', 'nbOffres' : '', 'typeCuisine' : '', 'price' : ''}
+
+					var data = $(this);
+
+					item.title = data.find('.poi_card-display-title').text().trim();
+					item.stars = data.find('.guide').text().trim();
+					if(data.find('.icon-mr').hasClass('icon-cotation1etoile')){
+						item.stars+=' 1 étoile';
+					}
+					if(data.find('.icon-mr').hasClass('icon-cotation2etoiles')){
+						item.stars+=' 2 étoiles';
+					}
+					if(data.find('.icon-mr').hasClass('icon-cotation3etoiles')){
+					item.stars+=' 3 étoiles';
+					}
+
+					item.nbOffres = data.find('.mtpb2c-offers').text().trim();
+					item.typeCuisine = data.find('.poi_card-display-cuisines').text().trim();
+					item.price = data.find('.poi_card-display-price').text().trim();
+					
+					json['items'].push(item);
 	
-	// The structure of our request call
-	// The first parameter is our URL
-	// The callback function takes 3 parameters, an error, response status code and the html
-
-	request(url, function(error, response, html){
-
-		// First we'll check to make sure no errors occurred when making the request
-
-		if(!error){
-			var $ = cheerio.load(html);
-
-			var title, stars, nbOffres, typeCuisine, price;
-			var json = { title : "", stars : "", nbOffres : "", typeCuisine : "", price : ""};
-
-			$('poi-card-link').each(function(){
-
-				$('.poi_card-display-title').filter(function(){
-
-
-					 var data = $(this);
-
-					 title = data.text();
-
-					 json.title = title;})
-
-
-
-				 $('.mtpb2c-offers').filter(function(){
-
-
-					 var data = $(this);
-
-					 nbOffres = data.text();
-
-					 json.title = nbOffres;})
-
-
-				 $('.poi_card-display-cuisines is-truncated').filter(function(){
-
-
-					 var data = $(this);
-
-					 typeCuisine = data.text();
-
-					 json.title = typeCuisine;})
-
-
-				 $('.poi_card-display-price').filter(function(){
-
-
-					 var data = $(this);
-
-					 price = data.text();
-
-					 json.title = price;})
-
-
-				 fs.writeFile('output.json', JSON.stringify(json, null, 4), function(err){
-						console.log('File successfully written! - Check your project directory for the output.json file');
 				})
-		})
+
+			fs.writeFile('output.json', JSON.stringify(json, null, 4), function(err){})
+			}
+
+		});
 	}
 
-		
+	res.send('Check your console!');
+	console.log('File successfully written! - Check the output.json file');
 
-res.send('Check your console!')
-
-	});
 })
 
 app.listen('8081');
-console.log('Magic happens on port 8081');
+console.log('Magic happens on port 8081/scrape');
 exports = module.exports = app;
-
-
-//foreach poi-card-link
-
-
-//nombres étoiles
-//guide-icon icon-mr icon-cotation3etoiles
-//guide-icon icon-mr icon-cotation2etoiles
-//guide-icon icon-mr icon-cotation1etoiles
-
-//nom restau
-//poi_card-display-title
-
-//nombre offres
-//mtpb2c-offers
-
-//type de cuisine
-//poi_card-display-cuisines is-truncated
-
-//fourchette de prix
-//poi_card-display-price
