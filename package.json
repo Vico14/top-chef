@@ -8,6 +8,7 @@
     "cheerio": "latest",
     "express": "^4.16.2",
     "package.json": "^2.0.1",
+    "remove-accents": "^0.4.2",
     "request": "latest"
   }
 }
